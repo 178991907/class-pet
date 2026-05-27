@@ -308,8 +308,8 @@ function closeDetail() {
                 <div class="absolute -top-1.5 left-5 w-3 h-3 bg-white border-l border-t border-gray-200/50 rotate-45"></div>
               </div>
             </div>
-            <!-- 右侧极致清晰的标题 -->
-            <span class="font-extrabold tracking-wide text-3xl">宠物图鉴</span>
+            <!-- 右侧极致清晰的标题：点击快速返回首页 -->
+            <router-link to="/" class="font-extrabold tracking-wide text-3xl hover:opacity-90 active:scale-95 transition-all cursor-pointer">宠物图鉴</router-link>
           </h1>
           <p class="text-gray-500 mt-2">预览所有宠物的成长形态</p>
         </div>

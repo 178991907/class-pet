@@ -975,8 +975,8 @@ onMounted(async () => {
               <div class="absolute -top-1.5 left-4 w-3 h-3 bg-white border-l border-t border-gray-200/50 rotate-45"></div>
             </div>
           </div>
-          <!-- 右侧极致清晰的品牌大字 -->
-          <span class="text-gradient font-extrabold tracking-wide text-2xl">班级宠物园</span>
+          <!-- 右侧极致清晰的品牌大字：点击快速返回首页 -->
+          <router-link to="/" class="text-gradient font-extrabold tracking-wide text-2xl hover:opacity-90 active:scale-95 transition-all cursor-pointer">班级宠物园</router-link>
         </h1>
         <select 
           v-if="classes.length > 0"
