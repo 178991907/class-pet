@@ -27,8 +27,8 @@ function getDefaultImage(petId: string): string {
   return `${cleanBase}pets/${petId}/lv1.png`
 }
 
-// 宠物配置
-export const PET_TYPES: PetType[] = [
+// 默认宠物配置
+const DEFAULT_PET_TYPES: PetType[] = [
   // 普通动物
   { id: 'west-highland', name: '西高地', category: 'normal', image: getDefaultImage('west-highland'), levelImages: generateLevelImages('west-highland') },
   { id: 'bichon', name: '比熊', category: 'normal', image: getDefaultImage('bichon'), levelImages: generateLevelImages('bichon') },
@@ -59,6 +59,27 @@ export const PET_TYPES: PetType[] = [
   { id: 'pixiu', name: '貔貅', category: 'mythical', image: getDefaultImage('pixiu'), levelImages: generateLevelImages('pixiu') },
   { id: 'suanni', name: '狻猊', category: 'mythical', image: getDefaultImage('suanni'), levelImages: generateLevelImages('suanni') },
 ]
+
+// 导出共享的可动态加载的宠物列表
+export const PET_TYPES: PetType[] = []
+
+export function loadPets() {
+  const defaults = [...DEFAULT_PET_TYPES]
+  try {
+    const data = localStorage.getItem('class_pet_garden_custom_pets')
+    if (data) {
+      const customs = JSON.parse(data)
+      defaults.push(...customs)
+    }
+  } catch (e) {
+    console.error('加载本地自定义宠物失败:', e)
+  }
+  PET_TYPES.length = 0
+  PET_TYPES.push(...defaults)
+}
+
+// 首次加载
+loadPets()
 
 // 等级配置
 export const LEVEL_CONFIG = [40, 60, 80, 100, 120, 140, 160]

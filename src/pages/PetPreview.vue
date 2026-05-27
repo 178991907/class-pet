@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { PET_TYPES, getPetLevelImage } from '@/data/pets'
+import { PET_TYPES, getPetLevelImage, loadPets } from '@/data/pets'
 import PetImage from '@/components/PetImage.vue'
 
 // 分类标签
@@ -14,13 +14,112 @@ const currentCategory = ref('all')
 const selectedPet = ref<string | null>(null)
 const selectedLevel = ref(1)
 
+// 新增宠物状态
+const showAddPetModal = ref(false)
+const newPetName = ref('')
+const newPetId = ref('')
+const newPetCategory = ref<'normal' | 'mythical'>('normal')
+const newPetSourceType = ref<'clone' | 'custom_url'>('clone')
+const selectedCloneSkinId = ref('west-highland')
+const customImagesBaseUrl = ref('')
+const addPetError = ref('')
 
+// 用于选择克隆模版的默认内置宠物列表（仅包含 ID 和名称）
+const defaultPetsList = computed(() => {
+  return PET_TYPES.filter(p => !p.id.startsWith('custom_'))
+})
 
 // 普通动物
 const normalPets = computed(() => PET_TYPES.filter(p => p.category === 'normal'))
 
 // 神兽
 const mythicalPets = computed(() => PET_TYPES.filter(p => p.category === 'mythical'))
+
+// 打开添加宠物弹窗
+function openAddPetModal() {
+  newPetName.value = ''
+  newPetId.value = ''
+  newPetCategory.value = 'normal'
+  newPetSourceType.value = 'clone'
+  selectedCloneSkinId.value = 'west-highland'
+  customImagesBaseUrl.value = ''
+  addPetError.value = ''
+  showAddPetModal.value = true
+}
+
+// 保存自定义宠物
+function saveCustomPet() {
+  addPetError.value = ''
+  const nameTrimmed = newPetName.value.trim()
+  const rawId = newPetId.value.trim().toLowerCase()
+
+  if (!nameTrimmed) {
+    addPetError.value = '请输入宠物名称'
+    return
+  }
+  if (!rawId) {
+    addPetError.value = '请输入唯一的宠物英文ID'
+    return
+  }
+  if (!/^[a-zA-Z0-9_-]+$/.test(rawId)) {
+    addPetError.value = 'ID 仅能包含英文、数字、中划线或下划线'
+    return
+  }
+
+  const finalId = `custom_${rawId}`
+  // 检查是否冲突
+  if (PET_TYPES.some(p => p.id === finalId || p.id === rawId)) {
+    addPetError.value = '该宠物 ID 已存在，请更换 ID'
+    return
+  }
+
+  // 组装宠物数据
+  let newPetData: any = {
+    id: finalId,
+    name: nameTrimmed,
+    category: newPetCategory.value
+  }
+
+  if (newPetSourceType.value === 'clone') {
+    // 克隆已有的内置宠物外形
+    const templatePet = PET_TYPES.find(p => p.id === selectedCloneSkinId.value)
+    if (!templatePet) {
+      addPetError.value = '选中的模板宠物不存在'
+      return
+    }
+    newPetData.image = templatePet.image
+    newPetData.levelImages = { ...templatePet.levelImages }
+  } else {
+    // 使用自定义的图片基路径
+    if (!customImagesBaseUrl.value.trim()) {
+      addPetError.value = '请输入自定义图片 Base URL'
+      return
+    }
+    const cleanUrl = customImagesBaseUrl.value.trim().replace(/\/$/, '')
+    newPetData.image = `${cleanUrl}/lv1.png`
+    
+    const levelImages: Record<number, string> = {}
+    for (let i = 1; i <= 8; i++) {
+      levelImages[i] = `${cleanUrl}/lv${i}.png`
+    }
+    newPetData.levelImages = levelImages
+  }
+
+  try {
+    const data = localStorage.getItem('class_pet_garden_custom_pets')
+    const customs = data ? JSON.parse(data) : []
+    customs.push(newPetData)
+    localStorage.setItem('class_pet_garden_custom_pets', JSON.stringify(customs))
+    
+    // 动态重新加载宠物列表数据
+    loadPets()
+    
+    showAddPetModal.value = false
+    alert(`🎉 恭喜！新宠物「${nameTrimmed}」添加成功！`)
+  } catch (e: any) {
+    addPetError.value = `保存失败: ${e.message || e}`
+  }
+}
 
 // 获取等级颜色
 function getLevelColor(level: number): string {
@@ -76,9 +175,17 @@ function closeDetail() {
           </h1>
           <p class="text-gray-500 mt-2">预览所有宠物的成长形态</p>
         </div>
-        <router-link to="/" class="px-6 py-3 bg-white rounded-xl shadow-md hover:shadow-lg transition-all font-medium text-gray-700">
-          ← 返回首页
-        </router-link>
+        <div class="flex items-center gap-3">
+          <button 
+            @click="openAddPetModal" 
+            class="px-6 py-3 bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 rounded-xl shadow-lg hover:shadow-xl transition-all font-bold text-white flex items-center gap-2"
+          >
+            <span>✨</span> 新增宠物
+          </button>
+          <router-link to="/" class="px-6 py-3 bg-white rounded-xl shadow-md hover:shadow-lg transition-all font-medium text-gray-700">
+            ← 返回首页
+          </router-link>
+        </div>
       </div>
     </header>
 
@@ -254,6 +361,141 @@ function closeDetail() {
                 </div>
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- 新增宠物弹窗 -->
+    <Transition name="modal">
+      <div v-if="showAddPetModal" class="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4" @click.self="showAddPetModal = false">
+        <div class="bg-white/95 backdrop-blur-xl border border-white/20 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden transform transition-all duration-300">
+          <!-- Header -->
+          <div class="bg-gradient-to-r from-orange-400 via-pink-400 to-purple-400 p-6 flex items-center justify-between text-white">
+            <h2 class="text-xl font-bold flex items-center gap-2">
+              <span class="text-2xl">✨</span> 新增自定义宠物
+            </h2>
+            <button @click="showAddPetModal = false" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white text-xl transition-colors">
+              ×
+            </button>
+          </div>
+
+          <!-- Body -->
+          <div class="p-6 max-h-[70vh] overflow-y-auto space-y-4 text-left">
+            <!-- 宠物名称 -->
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-1.5">宠物名称</label>
+              <input 
+                v-model="newPetName" 
+                type="text" 
+                placeholder="例如：极地雪狼、熔岩火凤" 
+                class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-orange-400 focus:ring focus:ring-orange-200/50 outline-none transition-all font-medium text-gray-800"
+              />
+            </div>
+
+            <!-- 宠物英文 ID -->
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-1.5">宠物英文 ID</label>
+              <input 
+                v-model="newPetId" 
+                type="text" 
+                placeholder="例如：snow-wolf, lava-phoenix" 
+                class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-orange-400 focus:ring focus:ring-orange-200/50 outline-none transition-all font-medium text-gray-800"
+              />
+              <p class="text-xs text-gray-400 mt-1">仅限英文、数字和中划线，系统会自动加入专属前缀避免冲突。</p>
+            </div>
+
+            <!-- 宠物类型 -->
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-1.5">分类档位</label>
+              <div class="flex gap-6">
+                <label class="flex items-center gap-2 cursor-pointer group">
+                  <input type="radio" value="normal" v-model="newPetCategory" class="accent-orange-500 w-4 h-4 cursor-pointer" />
+                  <span class="text-gray-700 font-bold group-hover:text-orange-500 transition-colors">普通动物</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer group">
+                  <input type="radio" value="mythical" v-model="newPetCategory" class="accent-purple-500 w-4 h-4 cursor-pointer" />
+                  <span class="text-gray-700 font-bold group-hover:text-purple-500 transition-colors">神秘神兽</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 外观图像来源 -->
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-1.5">外观形态图片来源</label>
+              <div class="flex rounded-xl bg-gray-100 p-1 mb-3">
+                <button 
+                  type="button" 
+                  @click="newPetSourceType = 'clone'"
+                  class="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all"
+                  :class="newPetSourceType === 'clone' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+                >
+                  克隆已有皮肤 (极速免配置)
+                </button>
+                <button 
+                  type="button" 
+                  @click="newPetSourceType = 'custom_url'"
+                  class="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all"
+                  :class="newPetSourceType === 'custom_url' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+                >
+                  自定义图片 CDN 路径
+                </button>
+              </div>
+
+              <!-- 皮肤克隆网格 -->
+              <div v-if="newPetSourceType === 'clone'" class="border border-gray-100 rounded-2xl p-3 bg-gray-50/50">
+                <label class="block text-xs font-bold text-gray-400 mb-2 text-left">选择一个内置的宠物外形模版：</label>
+                <div class="grid grid-cols-5 gap-2 max-h-[150px] overflow-y-auto p-1">
+                  <div 
+                    v-for="p in defaultPetsList" 
+                    :key="p.id"
+                    @click="selectedCloneSkinId = p.id"
+                    class="border rounded-xl p-1.5 cursor-pointer text-center transition-all bg-white hover:border-orange-300"
+                    :class="selectedCloneSkinId === p.id ? 'border-2 border-orange-500 shadow-sm shadow-orange-500/10' : 'border-gray-200'"
+                  >
+                    <div class="aspect-square w-full rounded-lg overflow-hidden bg-gray-50 mb-1">
+                      <img :src="getPetLevelImage(p.id, 1)" class="w-full h-full object-cover" />
+                    </div>
+                    <div class="text-[10px] font-bold text-gray-700 truncate">{{ p.name }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 自定义 Base URL -->
+              <div v-else class="space-y-2">
+                <label class="block text-xs font-bold text-gray-400 text-left">请输入包含 8 级头像的图片总路径：</label>
+                <input 
+                  v-model="customImagesBaseUrl" 
+                  type="text" 
+                  placeholder="如: https://mycdn.com/images/fox" 
+                  class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-orange-400 focus:ring focus:ring-orange-200/50 outline-none transition-all text-sm font-medium text-gray-800"
+                />
+                <p class="text-[10px] text-gray-400 leading-relaxed text-left">
+                  系统会自动在该 URL 后面追加并在成长线中渲染 `lv1.png` ~ `lv8.png` 格式的图片。请确保您在该 CDN 下正确放置了这 8 个图片。
+                </p>
+              </div>
+            </div>
+
+            <!-- 错误信息 -->
+            <div v-if="addPetError" class="p-3 bg-red-50 text-red-500 rounded-xl text-xs font-bold flex items-center gap-1.5">
+              <span>⚠️</span> {{ addPetError }}
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="p-6 bg-gray-50 border-t border-gray-100 flex gap-3">
+            <button 
+              @click="showAddPetModal = false" 
+              class="flex-1 py-3 bg-white border border-gray-200 text-gray-600 rounded-xl font-bold hover:bg-gray-100 transition-colors shadow-sm"
+            >
+              取消
+            </button>
+            <button 
+              @click="saveCustomPet" 
+              class="flex-1 py-3 bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 text-white rounded-xl font-bold transition-all shadow-md hover:shadow-lg"
+            >
+              保存并发布
+            </button>
           </div>
         </div>
       </div>
