@@ -948,9 +948,17 @@ onMounted(async () => {
     <header class="bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 shadow-lg px-4 py-3 flex items-center justify-between sticky top-0 z-30">
       <!-- Left -->
       <div class="flex items-center gap-3">
-        <h1 class="text-xl font-bold text-white drop-shadow-lg flex items-center gap-2">
-          <span class="text-2xl animate-bounce-slow">🐾</span>
-          <span class="text-gradient">班级宠物园</span>
+        <h1 class="text-xl font-bold text-white drop-shadow-lg flex items-center gap-2.5">
+          <!-- 智能 CSS 裁剪与缩放后的精美 3D LOGO 容器 -->
+          <div class="w-10 h-10 rounded-xl overflow-hidden bg-white/10 border border-white/30 shadow-md flex items-center justify-center relative group transition-all duration-300 hover:scale-105 hover:rotate-2 shrink-0">
+            <img 
+              src="/images/logo.png" 
+              alt="Logo"
+              class="w-[130%] h-[130%] object-cover object-top absolute -top-0.5"
+            />
+          </div>
+          <!-- 右侧极致清晰的品牌大字 -->
+          <span class="text-gradient font-extrabold tracking-wide text-2xl">班级宠物园</span>
         </h1>
         <select 
           v-if="classes.length > 0"
