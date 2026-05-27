@@ -4,7 +4,7 @@ import { resolve } from 'path'
 
 export default defineConfig({
   plugins: [vue()],
-  base: '/pet-garden/',
+  base: process.env.VERCEL ? '/' : '/pet-garden/',
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src')
