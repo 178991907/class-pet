@@ -23,6 +23,7 @@ const newPetSourceType = ref<'clone' | 'custom_url' | 'upload'>('clone')
 const selectedCloneSkinId = ref('west-highland')
 const customImagesBaseUrl = ref('')
 const addPetError = ref('')
+const showLogoModal = ref(false)
 
 // 用于存储 1-8 级手动上传的 Base64 图片
 const uploadedImages = ref<Record<number, string>>({})
@@ -282,9 +283,33 @@ function closeDetail() {
     <header class="mb-8">
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-3xl font-bold text-gradient flex items-center gap-3">
-            <span class="text-4xl">🐾</span>
-            宠物图鉴
+          <h1 class="text-3xl font-bold text-gradient flex items-center gap-3.5">
+            <!-- 智能 CSS 裁剪与缩放后的精美 3D LOGO 容器 -->
+            <div class="relative group cursor-pointer shrink-0" @click="showLogoModal = true">
+              <!-- 内层裁剪容器：带有 overflow-hidden，负责图片底部的智能 CSS 裁剪，并在悬停时平滑放大 1.1 倍 -->
+              <div class="w-11 h-11 rounded-2xl overflow-hidden bg-white/40 border border-white/60 shadow-md flex items-center justify-center relative transition-all duration-300 group-hover:scale-110 group-hover:rotate-2 group-hover:shadow-lg">
+                <img 
+                  src="/images/logo.png" 
+                  alt="Logo"
+                  class="w-[130%] h-[130%] object-cover object-top absolute -top-0.5"
+                />
+              </div>
+              
+              <!-- 超精美 Hover 悬浮气泡大卡片（现可完美、自由地在容器下方滑出，绝无阻挡） -->
+              <div class="absolute top-14 left-0 z-50 w-64 p-3 bg-white/95 backdrop-blur-xl border border-gray-200/50 rounded-2xl shadow-2xl transition-all duration-300 origin-top-left opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto text-left font-normal normal-case tracking-normal">
+                <div class="aspect-square w-full rounded-xl overflow-hidden bg-gray-50 mb-2 border border-gray-100">
+                  <img src="/images/logo.png" class="w-full h-full object-contain" />
+                </div>
+                <div>
+                  <div class="font-bold text-gray-800 text-sm">英语全科启盟+AI</div>
+                  <div class="text-[10px] text-gray-400 mt-1">💡 鼠标点击图标可查看超高清原尺寸大图</div>
+                </div>
+                <!-- 小气泡箭头 -->
+                <div class="absolute -top-1.5 left-5 w-3 h-3 bg-white border-l border-t border-gray-200/50 rotate-45"></div>
+              </div>
+            </div>
+            <!-- 右侧极致清晰的标题 -->
+            <span class="font-extrabold tracking-wide text-3xl">宠物图鉴</span>
           </h1>
           <p class="text-gray-500 mt-2">预览所有宠物的成长形态</p>
         </div>
@@ -686,6 +711,26 @@ function closeDetail() {
               保存并发布
             </button>
           </div>
+        </div>
+      </div>
+    </Transition>
+    
+    <!-- 高清 LOGO 预览弹窗 -->
+    <Transition name="modal">
+      <div v-if="showLogoModal" class="fixed inset-0 bg-black/75 backdrop-blur-md flex items-center justify-center z-50 p-4" @click.self="showLogoModal = false">
+        <div class="bg-white/95 backdrop-blur-xl border border-white/20 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden p-6 text-center transform transition-all duration-300 relative font-normal normal-case tracking-normal">
+          <!-- 关闭按钮 -->
+          <button @click="showLogoModal = false" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-800 text-lg transition-colors">
+            ×
+          </button>
+          
+          <!-- LOGO 大图 -->
+          <div class="aspect-square w-full rounded-2xl overflow-hidden border border-gray-100 bg-white mb-4 mt-2 shadow-inner">
+            <img src="/images/logo.png" class="w-full h-full object-contain" alt="英语全科启盟+AI 高清原图" />
+          </div>
+          
+          <h3 class="text-xl font-bold text-gray-800">英语全科启盟+AI</h3>
+          <p class="text-xs text-gray-400 mt-1">主品牌官方授权高清 3D LOGO 预览</p>
         </div>
       </div>
     </Transition>
