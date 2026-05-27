@@ -8,9 +8,12 @@ export interface PetType {
   levelImages?: Record<number, string>
 }
 
+const BASE_URL = import.meta.env.BASE_URL || '/pet-garden/'
+
 // 生成等级图片路径的辅助函数
 function generateLevelImages(petId: string): Record<number, string> {
-  const basePath = `/pet-garden/pets/${petId}`
+  const cleanBase = BASE_URL.endsWith('/') ? BASE_URL : `${BASE_URL}/`
+  const basePath = `${cleanBase}pets/${petId}`
   const images: Record<number, string> = {}
   for (let i = 1; i <= 8; i++) {
     images[i] = `${basePath}/lv${i}.png`
@@ -20,7 +23,8 @@ function generateLevelImages(petId: string): Record<number, string> {
 
 // 获取默认图片（等级1）
 function getDefaultImage(petId: string): string {
-  return `/pet-garden/pets/${petId}/lv1.png`
+  const cleanBase = BASE_URL.endsWith('/') ? BASE_URL : `${BASE_URL}/`
+  return `${cleanBase}pets/${petId}/lv1.png`
 }
 
 // 宠物配置
