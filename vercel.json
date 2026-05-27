@@ -2,7 +2,6 @@
   "version": 2,
   "cleanUrls": true,
   "rewrites": [
-    { "handle": "filesystem" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
