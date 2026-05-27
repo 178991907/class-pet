@@ -19,10 +19,15 @@ const showAddPetModal = ref(false)
 const newPetName = ref('')
 const newPetId = ref('')
 const newPetCategory = ref<'normal' | 'mythical'>('normal')
-const newPetSourceType = ref<'clone' | 'custom_url'>('clone')
+const newPetSourceType = ref<'clone' | 'custom_url' | 'upload'>('clone')
 const selectedCloneSkinId = ref('west-highland')
 const customImagesBaseUrl = ref('')
 const addPetError = ref('')
+
+// 用于存储 1-8 级手动上传的 Base64 图片
+const uploadedImages = ref<Record<number, string>>({})
+// 存储每个级别的图片压缩状态
+const isCompressing = ref<Record<number, boolean>>({})
 
 // 用于选择克隆模版的默认内置宠物列表（仅包含 ID 和名称）
 const defaultPetsList = computed(() => {
@@ -43,8 +48,78 @@ function openAddPetModal() {
   newPetSourceType.value = 'clone'
   selectedCloneSkinId.value = 'west-highland'
   customImagesBaseUrl.value = ''
+  uploadedImages.value = {}
+  isCompressing.value = {}
   addPetError.value = ''
   showAddPetModal.value = true
+}
+
+// 纯前端图片等比例压缩工具（限制宽或高最大 256px，大幅度缩减 Base64 占用，避免超出 LocalStorage 限制）
+function compressImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        const max_size = 256
+        let width = img.width
+        let height = img.height
+        
+        if (width > height) {
+          if (width > max_size) {
+            height *= max_size / width
+            width = max_size
+          }
+        } else {
+          if (height > max_size) {
+            width *= max_size / height
+            height = max_size
+          }
+        }
+        
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height)
+          // 采用 jpeg 质量 0.7 压缩，通常单张图片大小只有 5KB-10KB，极致节省本地存储空间
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.7)
+          resolve(dataUrl)
+        } else {
+          reject(new Error('Canvas 绘制环境获取失败'))
+        }
+      }
+      img.onerror = () => reject(new Error('加载图片原画失败'))
+      img.src = e.target?.result as string
+    }
+    reader.onerror = () => reject(new Error('读取本地文件失败'))
+    reader.readAsDataURL(file)
+  })
+}
+
+// 监听处理文件选择上传并触发 Canvas 压缩
+async function handleImageUpload(event: Event, level: number) {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  // 基础类型校验
+  if (!file.type.startsWith('image/')) {
+    alert('请选择有效的图片文件！')
+    return
+  }
+
+  isCompressing.value[level] = true
+  try {
+    const compressedBase64 = await compressImage(file)
+    uploadedImages.value[level] = compressedBase64
+  } catch (err: any) {
+    console.error(`第 ${level} 级形态压缩失败:`, err)
+    alert(`第 ${level} 级形态图片处理失败: ${err.message || err}`)
+  } finally {
+    isCompressing.value[level] = false
+  }
 }
 
 // 保存自定义宠物
@@ -89,7 +164,7 @@ function saveCustomPet() {
     }
     newPetData.image = templatePet.image
     newPetData.levelImages = { ...templatePet.levelImages }
-  } else {
+  } else if (newPetSourceType.value === 'custom_url') {
     // 使用自定义的图片基路径
     if (!customImagesBaseUrl.value.trim()) {
       addPetError.value = '请输入自定义图片 Base URL'
@@ -102,6 +177,18 @@ function saveCustomPet() {
     for (let i = 1; i <= 8; i++) {
       levelImages[i] = `${cleanUrl}/lv${i}.png`
     }
+    newPetData.levelImages = levelImages
+  } else {
+    // 直接手动上传本地 1-8 级原图
+    const levelImages: Record<number, string> = {}
+    for (let i = 1; i <= 8; i++) {
+      if (!uploadedImages.value[i]) {
+        addPetError.value = `请上传第 ${i} 级 (${getLevelName(i)}) 的宠物图片`
+        return
+      }
+      levelImages[i] = uploadedImages.value[i]
+    }
+    newPetData.image = uploadedImages.value[1]
     newPetData.levelImages = levelImages
   }
 
@@ -423,26 +510,34 @@ function closeDetail() {
             <!-- 外观图像来源 -->
             <div>
               <label class="block text-sm font-bold text-gray-700 mb-1.5">外观形态图片来源</label>
-              <div class="flex rounded-xl bg-gray-100 p-1 mb-3">
+              <div class="flex rounded-xl bg-gray-100 p-1 mb-4">
                 <button 
                   type="button" 
                   @click="newPetSourceType = 'clone'"
-                  class="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all"
+                  class="flex-1 py-2 rounded-lg text-[11px] font-bold transition-all"
                   :class="newPetSourceType === 'clone' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
                 >
-                  克隆已有皮肤 (极速免配置)
+                  克隆已有皮肤 (推荐)
+                </button>
+                <button 
+                  type="button" 
+                  @click="newPetSourceType = 'upload'"
+                  class="flex-1 py-2 rounded-lg text-[11px] font-bold transition-all"
+                  :class="newPetSourceType === 'upload' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+                >
+                  手动上传 8 级图片
                 </button>
                 <button 
                   type="button" 
                   @click="newPetSourceType = 'custom_url'"
-                  class="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all"
+                  class="flex-1 py-2 rounded-lg text-[11px] font-bold transition-all"
                   :class="newPetSourceType === 'custom_url' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
                 >
                   自定义图片 CDN 路径
                 </button>
               </div>
 
-              <!-- 皮肤克隆网格 -->
+              <!-- 选项一：皮肤克隆网格 -->
               <div v-if="newPetSourceType === 'clone'" class="border border-gray-100 rounded-2xl p-3 bg-gray-50/50">
                 <label class="block text-xs font-bold text-gray-400 mb-2 text-left">选择一个内置的宠物外形模版：</label>
                 <div class="grid grid-cols-5 gap-2 max-h-[150px] overflow-y-auto p-1">
@@ -461,7 +556,48 @@ function closeDetail() {
                 </div>
               </div>
 
-              <!-- 自定义 Base URL -->
+              <!-- 选项二：手动上传 8 级本地图片网格 -->
+              <div v-else-if="newPetSourceType === 'upload'" class="border border-gray-100 rounded-2xl p-3 bg-gray-50/50 space-y-2">
+                <label class="block text-xs font-bold text-gray-400 text-left">分别上传宠物 1 - 8 级（初生到满级毕业）的超萌原画：</label>
+                <div class="grid grid-cols-4 gap-2.5">
+                  <div 
+                    v-for="level in 8" 
+                    :key="level"
+                    class="relative aspect-square rounded-xl border-2 border-dashed border-gray-300 hover:border-orange-400 bg-white transition-all overflow-hidden flex flex-col items-center justify-center p-1 cursor-pointer group"
+                    @click="($event.currentTarget as HTMLElement).querySelector('input')?.click()"
+                  >
+                    <!-- 隐藏的文件输入框 -->
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      @change="handleImageUpload($event, level)"
+                      class="hidden"
+                    />
+                    
+                    <!-- 压缩 Loading 状态 -->
+                    <div v-if="isCompressing[level]" class="absolute inset-0 bg-white/80 backdrop-blur-[1px] flex items-center justify-center z-20">
+                      <span class="animate-spin text-orange-500 text-lg">⏳</span>
+                    </div>
+
+                    <!-- 已有图片预览 -->
+                    <template v-if="uploadedImages[level]">
+                      <img :src="uploadedImages[level]" class="w-full h-full object-contain rounded-lg transition-transform group-hover:scale-105" />
+                      <div class="absolute inset-x-0 bottom-0 bg-black/60 text-white text-[9px] font-bold py-0.5 text-center transition-opacity opacity-0 group-hover:opacity-100">
+                        重新上传
+                      </div>
+                    </template>
+
+                    <!-- 未上传状态 -->
+                    <template v-else>
+                      <span class="text-gray-400 group-hover:text-orange-500 transition-colors text-base font-bold">+</span>
+                      <span class="text-[9px] font-bold text-gray-500 mt-0.5">{{ getLevelName(level) }}</span>
+                      <span class="text-[8px] text-gray-400">Lv.{{ level }}</span>
+                    </template>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 选项三：自定义 Base URL -->
               <div v-else class="space-y-2">
                 <label class="block text-xs font-bold text-gray-400 text-left">请输入包含 8 级头像的图片总路径：</label>
                 <input 
