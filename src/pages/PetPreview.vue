@@ -301,7 +301,7 @@ function closeDetail() {
                   <img src="/images/logo.png" class="w-full h-full object-contain" />
                 </div>
                 <div>
-                  <div class="font-bold text-gray-800 text-sm">英语全科启盟+AI</div>
+                  <div class="font-bold text-gray-800 text-sm">英语全科启蒙+AI</div>
                   <div class="text-[10px] text-gray-400 mt-1">💡 鼠标点击图标可查看超高清原尺寸大图</div>
                 </div>
                 <!-- 小气泡箭头 -->
@@ -726,10 +726,10 @@ function closeDetail() {
           
           <!-- LOGO 大图 -->
           <div class="aspect-square w-full rounded-2xl overflow-hidden border border-gray-100 bg-white mb-4 mt-2 shadow-inner">
-            <img src="/images/logo.png" class="w-full h-full object-contain" alt="英语全科启盟+AI 高清原图" />
+            <img src="/images/logo.png" class="w-full h-full object-contain" alt="英语全科启蒙+AI 高清原图" />
           </div>
           
-          <h3 class="text-xl font-bold text-gray-800">英语全科启盟+AI</h3>
+          <h3 class="text-xl font-bold text-gray-800">英语全科启蒙+AI</h3>
           <p class="text-xs text-gray-400 mt-1">主品牌官方授权高清 3D LOGO 预览</p>
         </div>
       </div>
