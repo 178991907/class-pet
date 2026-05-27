@@ -951,16 +951,18 @@ onMounted(async () => {
       <div class="flex items-center gap-3">
         <h1 class="text-xl font-bold text-white drop-shadow-lg flex items-center gap-2.5">
           <!-- 智能 CSS 裁剪与缩放后的精美 3D LOGO 容器 -->
-          <div class="w-10 h-10 rounded-xl overflow-hidden bg-white/10 border border-white/30 shadow-md flex items-center justify-center relative group transition-all duration-300 hover:scale-105 hover:rotate-2 shrink-0 cursor-pointer"
-            @click="showLogoModal = true"
-          >
-            <img 
-              src="/images/logo.png" 
-              alt="Logo"
-              class="w-[130%] h-[130%] object-cover object-top absolute -top-0.5"
-            />
+          <!-- 外层大容器：不带 overflow-hidden，负责悬浮 Hover 状态追踪与气泡定位 -->
+          <div class="relative group cursor-pointer shrink-0" @click="showLogoModal = true">
+            <!-- 内层裁剪容器：带有 overflow-hidden，负责图片底部的智能 CSS 裁剪，并在悬停时平滑放大 1.1 倍 -->
+            <div class="w-10 h-10 rounded-xl overflow-hidden bg-white/10 border border-white/30 shadow-md flex items-center justify-center relative transition-all duration-300 group-hover:scale-110 group-hover:rotate-2 group-hover:shadow-lg">
+              <img 
+                src="/images/logo.png" 
+                alt="Logo"
+                class="w-[130%] h-[130%] object-cover object-top absolute -top-0.5"
+              />
+            </div>
             
-            <!-- 超精美 Hover 悬浮气泡大卡片 -->
+            <!-- 超精美 Hover 悬浮气泡大卡片（现可完美、自由地在容器下方滑出，绝无阻挡） -->
             <div class="absolute top-12 left-0 z-50 w-64 p-3 bg-white/95 backdrop-blur-xl border border-gray-200/50 rounded-2xl shadow-2xl transition-all duration-300 origin-top-left opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto text-left">
               <div class="aspect-square w-full rounded-xl overflow-hidden bg-gray-50 mb-2 border border-gray-100">
                 <img src="/images/logo.png" class="w-full h-full object-contain" />
