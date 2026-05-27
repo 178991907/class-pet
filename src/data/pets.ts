@@ -1,3 +1,5 @@
+import { reactive } from 'vue'
+
 // 宠物类型定义
 export interface PetType {
   id: string
@@ -61,7 +63,7 @@ const DEFAULT_PET_TYPES: PetType[] = [
 ]
 
 // 导出共享的可动态加载的宠物列表
-export const PET_TYPES: PetType[] = []
+export const PET_TYPES = reactive<PetType[]>([])
 
 export function loadPets() {
   const defaults = [...DEFAULT_PET_TYPES]

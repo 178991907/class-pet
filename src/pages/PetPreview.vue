@@ -208,6 +208,32 @@ function saveCustomPet() {
   }
 }
 
+// 删除自定义宠物
+function deleteCustomPet(petId: string) {
+  if (!petId.startsWith('custom_')) return
+
+  const petName = PET_TYPES.find(p => p.id === petId)?.name || '自定义宠物'
+
+  if (!confirm(`确定要删除自定义宠物「${petName}」吗？此操作不可逆，且已领养该宠物的学生将恢复未领养状态！`)) {
+    return
+  }
+
+  try {
+    const data = localStorage.getItem('class_pet_garden_custom_pets')
+    if (data) {
+      let customs = JSON.parse(data)
+      customs = customs.filter((p: any) => p.id !== petId)
+      localStorage.setItem('class_pet_garden_custom_pets', JSON.stringify(customs))
+    }
+
+    // 动态重新加载宠物列表数据
+    loadPets()
+    alert(`👋 宠物「${petName}」已成功删除！`)
+  } catch (e: any) {
+    alert(`删除失败: ${e.message || e}`)
+  }
+}
+
 // 获取等级颜色
 function getLevelColor(level: number): string {
   const colors: Record<number, string> = {
@@ -313,6 +339,15 @@ function closeDetail() {
               :hover-scale="true"
               :fixed-emoji-size="true"
             />
+            <!-- 如果是自定义宠物，显示删除按钮 -->
+            <button 
+              v-if="pet.id.startsWith('custom_')"
+              @click.stop="deleteCustomPet(pet.id)"
+              class="absolute top-1.5 right-1.5 z-20 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white text-xs shadow-md transition-all scale-0 group-hover:scale-100 duration-200"
+              title="注销此自定义宠物"
+            >
+              ×
+            </button>
           </div>
           <div class="text-center">
             <div class="font-bold text-sm text-gray-800 group-hover:text-orange-500 transition-colors">{{ pet.name }}</div>
@@ -344,6 +379,15 @@ function closeDetail() {
               :hover-scale="true"
               :fixed-emoji-size="true"
             />
+            <!-- 如果是自定义宠物，显示删除按钮 -->
+            <button 
+              v-if="pet.id.startsWith('custom_')"
+              @click.stop="deleteCustomPet(pet.id)"
+              class="absolute top-1.5 right-1.5 z-20 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white text-xs shadow-md transition-all scale-0 group-hover:scale-100 duration-200"
+              title="注销此自定义宠物"
+            >
+              ×
+            </button>
           </div>
           <div class="text-center">
             <div class="font-bold text-sm text-gray-800 group-hover:text-purple-500 transition-colors">{{ pet.name }}</div>
@@ -377,9 +421,18 @@ function closeDetail() {
                 </p>
               </div>
             </div>
-            <button @click="closeDetail" class="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white text-2xl transition-colors">
-              ×
-            </button>
+            <div class="flex items-center gap-3">
+              <button 
+                v-if="selectedPet && selectedPet.startsWith('custom_')"
+                @click="deleteCustomPet(selectedPet); closeDetail()"
+                class="px-4 py-2 bg-red-500/20 hover:bg-red-500/40 border border-red-400/30 hover:border-red-400/50 rounded-xl text-xs font-bold text-red-100 flex items-center gap-1.5 transition-all shadow-inner"
+              >
+                <span>🗑️</span> 注销宠物
+              </button>
+              <button @click="closeDetail" class="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white text-2xl transition-colors">
+                ×
+              </button>
+            </div>
           </div>
 
           <!-- 内容 -->
