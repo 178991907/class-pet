@@ -58,6 +58,7 @@ const showAddModal = ref(false)
 const showRankModal = ref(false)
 const showPetModal = ref(false)
 const showRecordsModal = ref(false)
+const showLogoModal = ref(false)
 const newClassName = ref('')
 const editingClass = ref<Class | null>(null)
 const newStudentName = ref('')
@@ -950,12 +951,27 @@ onMounted(async () => {
       <div class="flex items-center gap-3">
         <h1 class="text-xl font-bold text-white drop-shadow-lg flex items-center gap-2.5">
           <!-- 智能 CSS 裁剪与缩放后的精美 3D LOGO 容器 -->
-          <div class="w-10 h-10 rounded-xl overflow-hidden bg-white/10 border border-white/30 shadow-md flex items-center justify-center relative group transition-all duration-300 hover:scale-105 hover:rotate-2 shrink-0">
+          <div class="w-10 h-10 rounded-xl overflow-hidden bg-white/10 border border-white/30 shadow-md flex items-center justify-center relative group transition-all duration-300 hover:scale-105 hover:rotate-2 shrink-0 cursor-pointer"
+            @click="showLogoModal = true"
+          >
             <img 
               src="/images/logo.png" 
               alt="Logo"
               class="w-[130%] h-[130%] object-cover object-top absolute -top-0.5"
             />
+            
+            <!-- 超精美 Hover 悬浮气泡大卡片 -->
+            <div class="absolute top-12 left-0 z-50 w-64 p-3 bg-white/95 backdrop-blur-xl border border-gray-200/50 rounded-2xl shadow-2xl transition-all duration-300 origin-top-left opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto text-left">
+              <div class="aspect-square w-full rounded-xl overflow-hidden bg-gray-50 mb-2 border border-gray-100">
+                <img src="/images/logo.png" class="w-full h-full object-contain" />
+              </div>
+              <div>
+                <div class="font-bold text-gray-800 text-sm">英语全科启蒙+AI</div>
+                <div class="text-[10px] text-gray-400 mt-1">💡 鼠标点击图标可查看超高清原尺寸大图</div>
+              </div>
+              <!-- 小气泡箭头 -->
+              <div class="absolute -top-1.5 left-4 w-3 h-3 bg-white border-l border-t border-gray-200/50 rotate-45"></div>
+            </div>
           </div>
           <!-- 右侧极致清晰的品牌大字 -->
           <span class="text-gradient font-extrabold tracking-wide text-2xl">班级宠物园</span>
@@ -1916,6 +1932,26 @@ onMounted(async () => {
       @close="showAuthModal = false"
       @login="(user) => { toast.success(`欢迎，${user.username}！`); loadClasses() }"
     />
+    
+    <!-- 高清 LOGO 预览弹窗 -->
+    <Transition name="modal">
+      <div v-if="showLogoModal" class="fixed inset-0 bg-black/75 backdrop-blur-md flex items-center justify-center z-50 p-4" @click.self="showLogoModal = false">
+        <div class="bg-white/95 backdrop-blur-xl border border-white/20 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden p-6 text-center transform transition-all duration-300 relative">
+          <!-- 关闭按钮 -->
+          <button @click="showLogoModal = false" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-800 text-lg transition-colors">
+            ×
+          </button>
+          
+          <!-- LOGO 大图 -->
+          <div class="aspect-square w-full rounded-2xl overflow-hidden border border-gray-100 bg-white mb-4 mt-2 shadow-inner">
+            <img src="/images/logo.png" class="w-full h-full object-contain" alt="英语全科启蒙+AI 高清原图" />
+          </div>
+          
+          <h3 class="text-xl font-bold text-gray-800">英语全科启蒙+AI</h3>
+          <p class="text-xs text-gray-400 mt-1">主品牌官方授权高清 3D LOGO 预览</p>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
